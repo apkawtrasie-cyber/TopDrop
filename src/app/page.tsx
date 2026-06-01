@@ -23,31 +23,48 @@ export default function Home() {
 
   useEffect(() => {
     const bar = document.getElementById('progress-bar') as HTMLDivElement | null;
-    const onScroll = () => {
-      if (!bar) return;
+    if (!bar) return;
+    let raf = 0;
+    const update = () => {
       const pct = window.scrollY / (document.body.scrollHeight - window.innerHeight) * 100;
-      bar.style.width = Math.min(pct, 100) + '%';
+      bar.style.width = Math.min(Math.max(pct, 0), 100) + '%';
+      raf = 0;
     };
+    const onScroll = () => { if (!raf) raf = requestAnimationFrame(update); };
     window.addEventListener('scroll', onScroll, { passive: true });
-    return () => window.removeEventListener('scroll', onScroll);
+    return () => { window.removeEventListener('scroll', onScroll); if (raf) cancelAnimationFrame(raf); };
   }, []);
 
   useEffect(() => {
-    const obs = new IntersectionObserver((entries) => {
-      entries.forEach(e => { if (e.isIntersecting) { e.target.classList.add('visible'); obs.unobserve(e.target); } });
-    }, { threshold: 0.10 });
+    const targets = new Set<Element>();
     document.querySelectorAll('.bento .card').forEach((el, i) => {
       el.classList.add('reveal');
       (el as HTMLElement).style.transitionDelay = `${i * 90}ms`;
-      obs.observe(el);
+      targets.add(el);
     });
     document.querySelectorAll('.safety > *, .dev-card').forEach((el, i) => {
       el.classList.add('reveal');
       (el as HTMLElement).style.transitionDelay = `${i * 110}ms`;
-      obs.observe(el);
+      targets.add(el);
     });
-    document.querySelectorAll('.reveal').forEach(el => obs.observe(el));
-    return () => obs.disconnect();
+    document.querySelectorAll('.reveal').forEach(el => targets.add(el));
+
+    // Fallback: if IntersectionObserver unsupported, just reveal everything immediately.
+    if (typeof IntersectionObserver === 'undefined') {
+      targets.forEach(el => el.classList.add('visible'));
+      return;
+    }
+    const obs = new IntersectionObserver((entries) => {
+      entries.forEach(e => { if (e.isIntersecting) { e.target.classList.add('visible'); obs.unobserve(e.target); } });
+    }, { threshold: 0.05, rootMargin: '0px 0px -10% 0px' });
+    targets.forEach(el => obs.observe(el));
+
+    // Safety net: reveal anything still hidden after 1.5s (covers mobile edge cases).
+    const t = window.setTimeout(() => {
+      targets.forEach(el => el.classList.add('visible'));
+    }, 1500);
+
+    return () => { obs.disconnect(); window.clearTimeout(t); };
   }, []);
 
   async function handleSubmit(e: React.FormEvent<HTMLFormElement>) {
