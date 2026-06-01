@@ -9,7 +9,7 @@ export const metadata: Metadata = {
   description: 'TopDrop.ch – premium Swiss domain (.ch) for sale. 8+ years history, strong SEO, perfect for e-commerce, dropshipping, logistics & SaaS. Secure escrow transfer via Sedo / Dan.',
   keywords: 'TopDrop.ch, domain for sale, premium domain, swiss domain, .ch domain, dropshipping, e-commerce, SaaS, logistics, domain investment',
   authors: [{ name: 'andrzejmich.ch' }],
-  robots: 'index,follow',
+  robots: { index: false, follow: false },
   alternates: { canonical: 'https://TopDrop.ch/' },
   icons: { icon: '/favicon.svg', apple: '/favicon.svg' },
   openGraph: {
